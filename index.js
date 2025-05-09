@@ -10,6 +10,16 @@ restartButton.addEventListener("click", () => {
 
 ///////////////////////////////////////////////////////
 
+const displayController = (() => {
+    const renderMessage = (message) => {
+        document.querySelector("#message").innerHTML = message;
+    }
+
+    return {
+        renderMessage,
+    }
+})();
+
 const Gameboard = (() => {
     let gameboard = ["", "", "", "", "", "", "", "", "",]
 
@@ -54,8 +64,8 @@ const Game = (() => {
 
     const start = () => {
         players = [
-            createPlayer("Jack", "X"),
-            createPlayer("CPU", "O")
+            createPlayer("Player 1", "X"),
+            createPlayer("Player 2", "O")
         ]
 
         currentPlayerIndex = 0;
@@ -77,10 +87,10 @@ const Game = (() => {
 
         if (checkForWin(Gameboard.getGameboard(), players[currentPlayerIndex].marker)) {
             gameOver = true;
-            console.log(players[currentPlayerIndex].name + " Won")
+            displayController.renderMessage(`${players[currentPlayerIndex].name} wins`);
         } else if (checkForTie(Gameboard.getGameboard())) {
             gameOver = true;
-            console.log("Tie!");
+            displayController.renderMessage("It's a tie");
         }
 
         currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
@@ -92,6 +102,7 @@ const Game = (() => {
             Gameboard.update(i, "");
         }
         Gameboard.render();
+        displayController.renderMessage("");
         gameOver = false;
     }
 
