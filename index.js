@@ -1,29 +1,108 @@
-function Player (name, marker) {
-    this.name = name;
-    this.marker = marker;
+const startButton = document.querySelector("#start-button");
+const restartButton = document.querySelector("#restart-button");
 
-    this.sayName = function() {
-        console.log(this.name, this.marker)
-    };
-}
+startButton.addEventListener("click", () => {
+    Game.start();
+})
+restartButton.addEventListener("click", () => {
+    Game.restart();
+})
 
-const Gameboard = (function () {
-    let board = ["", "", "", "", "", "", "", "", ""];
+///////////////////////////////////////////////////////
 
-    const add = ((marker, position) => board[position] = marker);
+const Gameboard = (() => {
+    let gameboard = ["", "", "", "", "", "", "", "", "",]
 
-    let clear = function() { 
-        for (let i = 0; i < board.length; i++) {
-            board[i] = "";
-        }
-    };
+    const render = () => {
+        let boardHTML = "";
+        gameboard.forEach((square, index) => {
+            boardHTML += `<div class=cell id="square-${index}">${square}</div>`
+        })
+        document.querySelector(".cell-container").innerHTML = boardHTML;
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((square) => {
+            square.addEventListener("click", Game.handleClick);
+        })
+    }
 
-    return { add, board, clear };
+    const update = (index, value) => {
+        gameboard[index] = value;
+        render();
+    }
+
+    const getGameboard = () => gameboard;
+
+    return {
+        render,
+        update,
+        getGameboard,
+    }
+
 })();
 
-const GameController = (function () {
-    // let currentPlayer;
+const createPlayer = (name, marker) => {
+    return {
+        name,
+        marker
+    }
+}
 
+const Game = (() => {
+    let players = [];
+    let currentPlayerIndex;
+    let gameOver;
+
+    const start = () => {
+        players = [
+            createPlayer("Jack", "X"),
+            createPlayer("CPU", "O")
+        ]
+
+        currentPlayerIndex = 0;
+        gameOver = false;
+        Gameboard.render();
+    }
+
+    const handleClick = (event) => {
+        if (gameOver) {
+            return;
+        }
+
+        let index = parseInt(event.target.id.split("-")[1]);
+
+        if (Gameboard.getGameboard()[index] !== "")
+            return;
+
+        Gameboard.update(index, players[currentPlayerIndex].marker);
+
+        if (checkForWin(Gameboard.getGameboard(), players[currentPlayerIndex].marker)) {
+            gameOver = true;
+            console.log(players[currentPlayerIndex].name + " Won")
+        } else if (checkForTie(Gameboard.getGameboard())) {
+            gameOver = true;
+            console.log("Tie!");
+        }
+
+        currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
+
+    }
+
+    const restart = () => {
+        for (let i = 0; i < 9; i++) {
+            Gameboard.update(i, "");
+        }
+        Gameboard.render();
+        gameOver = false;
+    }
+
+    return {
+        start,
+        handleClick, 
+        restart,
+    }
+})();
+
+function checkForWin(board) {
     const winCondition = [
         [0, 1, 2],
         [3, 4, 5],
@@ -35,55 +114,15 @@ const GameController = (function () {
         [2, 4, 6]
     ];
 
-    function setPlayer(player) {
-        currentPlayer = player;
-    }
-
-    function swapPlayer() {
-        if (currentPlayer === player1) {
-            currentPlayer = player2
-        } else {
-        currentPlayer = player1;
-        }     
-    }
-
-    function playRound(position) {
-        const marker = currentPlayer.marker;
-        if (Gameboard.board[position] === "") {
-            Gameboard.add(marker, position);
-            CheckWin();
-            swapPlayer();
-            console.log(Gameboard.board)
-        } else {
-            console.log("Cannot place here!");
+    for (let i = 0; i < winCondition.length; i++) {
+        const [a, b, c] = winCondition[i];
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return true;
         }
     }
+    return false;
+}
 
-    function CheckWin() {
-        for (let i = 0; i < winCondition.length; i++) {
-            let checker = 0;
-            for (let j = 0; j < winCondition[i].length; j++) {
-                const pos = winCondition[i][j];
-                if (Gameboard.board[pos] === currentPlayer.marker) {
-                    checker++;
-                    console.log(checker);
-                }
-                if (checker === 3) {
-                    console.log("You Win")
-                    Gameboard.clear();
-                }
-            }
-            checker = 0;
-        }
-    }
-    return { setPlayer, playRound };
-})();
-
-// Gameboard.add("X", 0);
-
-const player1 = new Player('You', 'X');
-const player2 = new Player('Computer', 'O');
-
-GameController.setPlayer(player1);
-
-///////////////////////////////////////////////////////
+function checkForTie(board) {
+    return board.every(cell => cell != "");
+}
